@@ -111,7 +111,7 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
+  p->prioridade = 0;
   return p;
 }
 
@@ -532,3 +532,27 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+//20 eh o overflow de prioridade
+  int
+  getpriority(int pid)
+  {
+      struct proc *p;
+      p = &ptable.proc[pid];
+      if(p->state == UNUSED){
+        return MINPRIORITY + 1;
+      }
+      return p->prioridade;
+
+  }
+  
+  int
+  setpriority(int pid, int prio)
+  {
+      struct proc *p;
+      p = &ptable.proc[pid];
+      if(p->state == UNUSED || (prio <= MAXPRIORITY && prio >= MINPRIORITY)){
+        return MINPRIORITY + 1;
+      }
+      return p->prioridade = prio;
+  }
