@@ -533,7 +533,6 @@ procdump(void)
   }
 }
 
-//20 eh o overflow de prioridade
   int
   getpriority(int pid)
   {
@@ -543,18 +542,19 @@ procdump(void)
             return p->prioridade;
           }
       }
-      return MINPRIORITY + 1;
+      return -1;
 
   }
   
   int
   setpriority(int pid, int prio)
   {
+    int status = 0;
+    if(prio >= MINPRIORITY && prio <= MAXPRIORITY){
       struct proc *p;
       // garantir que nada vai mudar enquanto definimos a prioridade
       acquire(&ptable.lock);
-      int status = 0;
-      for(p = ptable.proc; p < &ptable.proc[NPROC] && (prio >= MAXPRIORITY && prio <= MINPRIORITY); p++){
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
           if(p->pid == pid && p->state != UNUSED){
               p->prioridade = prio;
               status = 1;
@@ -562,5 +562,6 @@ procdump(void)
         
       }
       release(&ptable.lock);
-      return status ? prio : MINPRIORITY + 1;
+      }
+      return status ? prio : -1;
   }
