@@ -88,7 +88,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-
+  //definido prioridade apos criar o pid
+  p->prioridade = 0;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -111,7 +112,6 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-  p->prioridade = 0;
   return p;
 }
 
@@ -538,11 +538,12 @@ procdump(void)
   getpriority(int pid)
   {
       struct proc *p;
-      p = &ptable.proc[pid];
-      if(p->state == UNUSED){
-        return MINPRIORITY + 1;
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+          if(p->pid == pid && p->state != UNUSED){
+            return p->prioridade;
+          }
       }
-      return p->prioridade;
+      return MINPRIORITY + 1;
 
   }
   
@@ -550,9 +551,16 @@ procdump(void)
   setpriority(int pid, int prio)
   {
       struct proc *p;
-      p = &ptable.proc[pid];
-      if(p->state == UNUSED || (prio <= MAXPRIORITY && prio >= MINPRIORITY)){
-        return MINPRIORITY + 1;
+      // garantir que nada vai mudar enquanto definimos a prioridade
+      acquire(&ptable.lock);
+      int status = 0;
+      for(p = ptable.proc; p < &ptable.proc[NPROC] && (prio >= MAXPRIORITY && prio <= MINPRIORITY); p++){
+          if(p->pid == pid && p->state != UNUSED){
+              p->prioridade = prio;
+              status = 1;
+          }
+        
       }
-      return p->prioridade = prio;
+      release(&ptable.lock);
+      return status ? prio : MINPRIORITY + 1;
   }
