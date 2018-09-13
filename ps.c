@@ -3,16 +3,14 @@
 #include "user.h"
 #include "fs.h"
 	
-int main( int argc, char *argv[ ] )
-	//decodifica args
-	
-	int prio = ...;
-	char path_programa[];
-	args_programa
-	//
-
+int main(int argc, char *argv[ ]){
 	int pid = getpid();
-	setpriority(pid, prio);
-	exec(path, args_prorama);
+	//apagar linha seguinte
+	printf(1,"qtd argc %d\n", argc);
+	printf(1,"Li prioridade %d\n", getpriority(pid));
+	printf(1,"Tento definir prioridade como -4 (invalida) e obtive: %d como resposta\n", setpriority(pid, -4));
+	printf(1,"Lendo prioridade novamente, obtive: %d\n", getpriority(pid));
+	printf(1,"Tento agora definir prioridade como 25 (valida) e obtive: %d como resposta\n", setpriority(pid, 25));
+    printf(1,"Lendo prioridade novamente, obtive: %d\n", getpriority(pid));
 	exit();
 }
