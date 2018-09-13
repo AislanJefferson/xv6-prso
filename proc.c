@@ -89,7 +89,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   //definido prioridade apos criar o pid
-  p->prioridade = 0;
+  p->prioridade = 64;
   release(&ptable.lock);
 
   // Allocate kernel stack.
