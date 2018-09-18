@@ -564,8 +564,8 @@ procdump(void)
               p->prioridade = prio;
               status = 1;
           }
-        
       }
+      release(&ptable.lock);
       
       }
       return status ? prio : -1;
