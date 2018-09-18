@@ -89,7 +89,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   //definido prioridade apos criar o pid
-  p->prioridade = 64;
+  p->prioridade = 16;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -323,6 +323,7 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct proc *max;
   struct cpu *c = mycpu();
   c->proc = 0;
   
@@ -332,10 +333,30 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(int i = 0; i < NPROC; ++i){
+
+      p = &ptable.proc[i];
+
       if(p->state != RUNNABLE)
         continue;
 
+      max = p;
+      for (int j = 0; j < NPROC; ++j)
+      {  
+        struct proc *p_tmp =  &ptable.proc[j];
+        if(p_tmp->state == RUNNABLE && max->prioridade < p_tmp->prioridade){
+          max = p_tmp;
+        }
+      }
+
+      for (int k = 0; k < NPROC; ++k)
+      {  
+        struct proc *p_tmp =  &ptable.proc[k];
+        if(p_tmp->pid != max->pid){
+          p_tmp->prioridade--;
+        }
+      }
+      p = max;
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -523,7 +544,7 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
+    cprintf("%d %s %s Prioridade: %d", p->pid, state, p->name, p->prioridade);
     if(p->state == SLEEPING){
       getcallerpcs((uint*)p->context->ebp+2, pc);
       for(i=0; i<10 && pc[i] != 0; i++)
