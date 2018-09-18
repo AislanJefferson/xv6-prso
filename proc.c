@@ -537,12 +537,17 @@ procdump(void)
   getpriority(int pid)
   {
       struct proc *p;
+      int status = 0;
+      int prio;
+      acquire(&ptable.lock);
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
           if(p->pid == pid && p->state != UNUSED){
-            return p->prioridade;
+            status = 1;
+            prio = p->prioridade;
           }
       }
-      return -1;
+      release(&ptable.lock);
+      return status ? prio : -1;
 
   }
   
@@ -561,7 +566,7 @@ procdump(void)
           }
         
       }
-      release(&ptable.lock);
+      
       }
       return status ? prio : -1;
   }
