@@ -90,6 +90,7 @@ found:
   p->pid = nextpid++;
   //definido prioridade apos criar o pid
   p->prioridade = DEFAULT_PRIORITY;
+  p->ticks_counter = DEFAULT_TICK;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -323,33 +324,49 @@ void
 scheduler(void)
 {
   struct proc *p;
-  struct proc *max;
+  struct proc *max = 0;
+  struct proc *p_tmp = 0;
   struct cpu *c = mycpu();
   c->proc = 0;
-  int ticks_counter = 0;
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(int i = 0; i < NPROC; ++i){
-
-      p = &ptable.proc[i];
-
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    //for(int i = 0; i < NPROC; ++i){
       if(p->state != RUNNABLE)
         continue;
       //todos esses sao runnables
-      cprintf("Com i=%d nome:%s state:%d entrei\n",i,p->name,p->state);
+      
       max = p;
-      for (int j = 0; j < NPROC; ++j)
+      cprintf("1 - Nome:%s state:%d entrei\n",max->name,max->state);
+      for (p_tmp = ptable.proc; p_tmp < &ptable.proc[NPROC]; p_tmp++)
       {  
-        struct proc *p_tmp =  &ptable.proc[j];
+        //cprintf("max priority: %d . t_tmp priority: %d\n", max->prioridade, p_tmp->prioridade);
         if(p_tmp->state == RUNNABLE && max->prioridade > p_tmp->prioridade){
+          cprintf("tem runnable\n");
           max = p_tmp;
         }
       }
       p = max;
+
+      if (p->ticks_counter == 4){
+
+        for (int k = 0; k < NPROC; ++k){  
+          struct proc *p_tmp =  &ptable.proc[k];
+          // Lembre-se que { UNUSED = 0 , EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE=5};
+          if(p_tmp->state != UNUSED) cprintf("\nNome:%s e state:%d. Prioridade: %d\n",p_tmp->name,p_tmp->state, p_tmp->prioridade);
+          // Apenas processos RUNNABLE devem ser modificados
+          if(p_tmp != p && p_tmp->state == RUNNABLE){
+            cprintf("\n%sentrei\n",p_tmp->name);
+            // prioridade soh pode ser aumentada ( decrementada) se tiver no limite maximo
+            if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
+          }
+        }
+        p->ticks_counter = 0;
+      }
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -357,25 +374,7 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      // Faz limite de ticks para modificacao de prioridade de outros
-      if(ticks_counter > 4){
-        ticks_counter = 0;
-        for (int k = 0; k < NPROC; ++k)
-        {  
-          struct proc *p_tmp =  &ptable.proc[k];
-          // Lembre-se que { UNUSED = 0 , EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE=5};
-          if(p_tmp->state != UNUSED) cprintf("\nNome:%s e state:%d\n",p_tmp->name,p_tmp->state);
-          // Apenas processos RUNNABLE devem ser modificados
-          if(p_tmp->state == RUNNABLE){
-            cprintf("%s entrei\n",p_tmp->name);
-            // prioridade soh pode ser aumentada ( decrementada) se tiver no limite maximo
-            if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
-          }
-        }
-      }else{
-        ticks_counter++;
-      }
-
+      p->ticks_counter++;
       swtch(&(c->scheduler), p->context);
       switchkvm();
 
@@ -603,3 +602,25 @@ procdump(void)
       }
       return status ? prio : -1;
   }
+
+  int ps(){
+  struct proc *p;
+
+  sti();
+
+  acquire(&ptable.lock);
+  cprintf("name \t pid \t state \t \t priority \n");
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->state == 2){
+      cprintf("%s \t %d \t SLEEPING \t %d\n ", p->name, p->pid, p->prioridade);
+    } else if (p->state == 3){
+      cprintf("%s \t %d \t RUNNING \t %d\n ", p->name, p->pid, p->prioridade);
+    } else if (p->state == 4){
+      cprintf("%s \t %d \t RUNNABLE \t %d\n ", p->name, p->pid, p->prioridade);
+    }
+
+  }
+
+    release(&ptable.lock);
+    return 24;
+}
