@@ -89,7 +89,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   //definido prioridade apos criar o pid
-  p->prioridade = 16;
+  p->prioridade = DEFAULT_PRIORITY;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -326,7 +326,7 @@ scheduler(void)
   struct proc *max;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+  int ticks_counter = 0;
   for(;;){
     // Enable interrupts on this processor.
     sti();
@@ -339,30 +339,42 @@ scheduler(void)
 
       if(p->state != RUNNABLE)
         continue;
-
+      //todos esses sao runnables
+      cprintf("Com i=%d nome:%s state:%d entrei\n",i,p->name,p->state);
       max = p;
       for (int j = 0; j < NPROC; ++j)
       {  
         struct proc *p_tmp =  &ptable.proc[j];
-        if(p_tmp->state == RUNNABLE && max->prioridade < p_tmp->prioridade){
+        if(p_tmp->state == RUNNABLE && max->prioridade > p_tmp->prioridade){
           max = p_tmp;
         }
       }
-
-      for (int k = 0; k < NPROC; ++k)
-      {  
-        struct proc *p_tmp =  &ptable.proc[k];
-        if(p_tmp->pid != max->pid){
-          p_tmp->prioridade--;
-        }
-      }
       p = max;
+
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      // Faz limite de ticks para modificacao de prioridade de outros
+      if(ticks_counter > 4){
+        ticks_counter = 0;
+        for (int k = 0; k < NPROC; ++k)
+        {  
+          struct proc *p_tmp =  &ptable.proc[k];
+          // Lembre-se que { UNUSED = 0 , EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE=5};
+          if(p_tmp->state != UNUSED) cprintf("\nNome:%s e state:%d\n",p_tmp->name,p_tmp->state);
+          // Apenas processos RUNNABLE devem ser modificados
+          if(p_tmp->state == RUNNABLE){
+            cprintf("%s entrei\n",p_tmp->name);
+            // prioridade soh pode ser aumentada ( decrementada) se tiver no limite maximo
+            if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
+          }
+        }
+      }else{
+        ticks_counter++;
+      }
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -576,7 +588,7 @@ procdump(void)
   setpriority(int pid, int prio)
   {
     int status = 0;
-    if(prio >= MINPRIORITY && prio <= MAXPRIORITY){
+    if(prio >= MAXPRIORITY && prio <= MINPRIORITY){
       struct proc *p;
       // garantir que nada vai mudar enquanto definimos a prioridade
       acquire(&ptable.lock);
