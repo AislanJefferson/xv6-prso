@@ -335,13 +335,12 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    //for(int i = 0; i < NPROC; ++i){
       if(p->state != RUNNABLE)
         continue;
       //todos esses sao runnables
       
       max = p;
-      cprintf("1 - Nome:%s state:%d entrei\n",max->name,max->state);
+     // cprintf("1 - Nome:%s state:%d entrei\n",max->name,max->state);
       for (p_tmp = ptable.proc; p_tmp < &ptable.proc[NPROC]; p_tmp++)
       {  
         //cprintf("max priority: %d . t_tmp priority: %d\n", max->prioridade, p_tmp->prioridade);
@@ -357,12 +356,19 @@ scheduler(void)
         for (int k = 0; k < NPROC; ++k){  
           struct proc *p_tmp =  &ptable.proc[k];
           // Lembre-se que { UNUSED = 0 , EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE=5};
-          if(p_tmp->state != UNUSED) cprintf("\nNome:%s e state:%d. Prioridade: %d\n",p_tmp->name,p_tmp->state, p_tmp->prioridade);
-          // Apenas processos RUNNABLE devem ser modificados
-          if(p_tmp != p && p_tmp->state == RUNNABLE){
-            cprintf("\n%sentrei\n",p_tmp->name);
-            // prioridade soh pode ser aumentada ( decrementada) se tiver no limite maximo
-            if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
+          if(p_tmp->state != UNUSED){ 
+           // cprintf("\nNome:%s e state:%d. Prioridade: %d\n",p_tmp->name,p_tmp->state, p_tmp->prioridade);
+            // Apenas processos RUNNABLE devem ser modificados
+            if (p_tmp != p) {
+            //  cprintf("\nDIFERENTES ->> Nome:%s e state:%d. Prioridade: %d\n",p->name,p->state, p->prioridade);
+              if(p_tmp->state == RUNNABLE){
+                cprintf("\n%s ENTREI\n",p_tmp->name);
+                // prioridade soh pode ser aumentada ( decrementada) se tiver no limite maximo
+                if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
+              }
+            } else {
+             // cprintf("\nIGUAIS ->> Nome:%s e state:%d. Prioridade: %d\n",p->name,p->state, p->prioridade);
+            }
           }
         }
         p->ticks_counter = 0;
