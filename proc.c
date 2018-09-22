@@ -604,23 +604,23 @@ procdump(void)
   }
 
   int ps(){
-  struct proc *p;
+    struct proc *p;
 
-  sti();
+    sti();
 
-  acquire(&ptable.lock);
-  cprintf("name \t pid \t state \t \t priority \n");
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if (p->state == 2){
-      cprintf("%s \t %d \t SLEEPING \t %d\n ", p->name, p->pid, p->prioridade);
-    } else if (p->state == 3){
-      cprintf("%s \t %d \t RUNNING \t %d\n ", p->name, p->pid, p->prioridade);
-    } else if (p->state == 4){
-      cprintf("%s \t %d \t RUNNABLE \t %d\n ", p->name, p->pid, p->prioridade);
+    acquire(&ptable.lock);
+    cprintf("name \t pid \t state \t \t priority \n");
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if (p->state == 2){
+        cprintf("%s \t %d \t SLEEPING \t %d\n ", p->name, p->pid, p->prioridade);
+      } else if (p->state == 3){
+        cprintf("%s \t %d \t RUNNING \t %d\n ", p->name, p->pid, p->prioridade);
+      } else if (p->state == 4){
+        cprintf("%s \t %d \t RUNNABLE \t %d\n ", p->name, p->pid, p->prioridade);
+      }
+
     }
 
-  }
-
-    release(&ptable.lock);
-    return 24;
+      release(&ptable.lock);
+      return 24;
 }
