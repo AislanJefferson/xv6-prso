@@ -337,18 +337,22 @@ scheduler(void)
 
       p = &ptable.proc[i];
 
-      if(p->state != RUNNABLE)
-        continue;
-      //todos esses sao runnables
-      cprintf("Com i=%d nome:%s state:%d entrei\n",i,p->name,p->state);
+      if(p->state != RUNNABLE) continue;
+      //Aqui eh runnable
       max = p;
+      struct proc *p_tmp;
       for (int j = 0; j < NPROC; ++j)
       {  
-        struct proc *p_tmp =  &ptable.proc[j];
-        if(p_tmp->state == RUNNABLE && max->prioridade > p_tmp->prioridade){
+        p_tmp =  &ptable.proc[j];
+        if(p_tmp->state != RUNNABLE) continue;
+        // Aqui eh runnable
+        if(max->prioridade > p_tmp->prioridade){
           max = p_tmp;
+          // seta a posicao do maior para a do for externo
+          i = j;
         }
       }
+      //atribui o maximo a p
       p = max;
 
       // Switch to chosen process.  It is the process's job
@@ -358,19 +362,17 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
       // Faz limite de ticks para modificacao de prioridade de outros
-      if(ticks_counter > 4){
+      if(ticks_counter > 5){
         ticks_counter = 0;
+        struct proc *p_tmp;
         for (int k = 0; k < NPROC; ++k)
         {  
-          struct proc *p_tmp =  &ptable.proc[k];
-          // Lembre-se que { UNUSED = 0 , EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE=5};
-          if(p_tmp->state != UNUSED) cprintf("\nNome:%s e state:%d\n",p_tmp->name,p_tmp->state);
+          p_tmp =  &ptable.proc[k];
           // Apenas processos RUNNABLE devem ser modificados
-          if(p_tmp->state == RUNNABLE){
-            cprintf("%s entrei\n",p_tmp->name);
-            // prioridade soh pode ser aumentada ( decrementada) se tiver no limite maximo
-            if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
-          }
+          if(p_tmp->state != RUNNABLE) continue;
+          //Aqui eh runnable
+          // prioridade soh pode ser aumentada ( decrementada) se nao tiver no limite maximo
+          if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
         }
       }else{
         ticks_counter++;
