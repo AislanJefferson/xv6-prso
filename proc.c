@@ -90,6 +90,7 @@ found:
   p->pid = nextpid++;
   //definido prioridade apos criar o pid
   p->prioridade = DEFAULT_PRIORITY;
+  p->ticks_counter = DEFAULT_TICK;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -326,7 +327,6 @@ scheduler(void)
   struct proc *max;
   struct cpu *c = mycpu();
   c->proc = 0;
-  int ticks_counter = 0;
   for(;;){
     // Enable interrupts on this processor.
     sti();
@@ -362,8 +362,8 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
       // Faz limite de ticks para modificacao de prioridade de outros
-      if(ticks_counter > 5){
-        ticks_counter = 0;
+      if(p->ticks_counter > 5){
+        p->ticks_counter = 0;
         struct proc *p_tmp;
         for (int k = 0; k < NPROC; ++k)
         {  
@@ -375,7 +375,7 @@ scheduler(void)
           if(p_tmp->prioridade >  MAXPRIORITY) p_tmp->prioridade--;
         }
       }else{
-        ticks_counter++;
+        p->ticks_counter++;
       }
 
       swtch(&(c->scheduler), p->context);

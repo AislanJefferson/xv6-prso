@@ -14,3 +14,4 @@
 #define MAXPRIORITY  0
 #define MINPRIORITY  31
 #define DEFAULT_PRIORITY 16
+#define DEFAULT_TICK 0
